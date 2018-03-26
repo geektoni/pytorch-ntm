@@ -58,6 +58,7 @@ class NTMMemory(nn.Module):
 
         if self.is_cuda:
             self.memory = self.memory.cuda()
+
         erase = torch.matmul(w.unsqueeze(-1), e.unsqueeze(1))
         add = torch.matmul(w.unsqueeze(-1), a.unsqueeze(1))
         self.memory = self.prev_mem * (1 - erase) + add
