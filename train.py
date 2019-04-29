@@ -21,10 +21,12 @@ LOGGER = logging.getLogger(__name__)
 
 from tasks.copytask import CopyTaskModelTraining, CopyTaskParams
 from tasks.repeatcopytask import RepeatCopyTaskModelTraining, RepeatCopyTaskParams
+from tasks.prioritysort import PrioritySortTaskModelTraining, PrioritySortTaskParams
 
 TASKS = {
     'copy': (CopyTaskModelTraining, CopyTaskParams),
-    'repeat-copy': (RepeatCopyTaskModelTraining, RepeatCopyTaskParams)
+    'repeat-copy': (RepeatCopyTaskModelTraining, RepeatCopyTaskParams),
+    'priority-sort': (PrioritySortTaskModelTraining, PrioritySortTaskParams)
 }
 
 
@@ -53,7 +55,6 @@ def init_seed(seed=None):
 def progress_clean():
     """Clean the progress bar."""
     print("\r{}".format(" " * 80), end='\r')
-
 
 def progress_bar(batch_num, report_interval, last_loss):
     """Prints the progress until the next report."""
