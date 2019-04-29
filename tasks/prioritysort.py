@@ -69,6 +69,7 @@ def dataloader(num_batches,
 @attrs
 class PrioritySortTaskParams(object):
     name = attrib(default="priority-sort-task")
+    cuda = attrib(default=False)
     controller_size = attrib(default=115, convert=int)
     controller_layers = attrib(default=2,convert=int)
     num_heads = attrib(default=5, convert=int)
@@ -86,6 +87,7 @@ class PrioritySortTaskParams(object):
 @attrs
 class PrioritySortTaskModelTraining(object):
     params = attrib(default=Factory(PrioritySortTaskParams))
+    cuda = attrib(default=False)
     net = attrib()
     dataloader = attrib()
     criterion = attrib()
@@ -99,7 +101,11 @@ class PrioritySortTaskModelTraining(object):
         net = EncapsulatedNTM(self.params.sequence_width + 1, self.params.sequence_width+1,
                               self.params.controller_size, self.params.controller_layers,
                               self.params.num_heads,
-                              self.params.memory_n, self.params.memory_m)
+                              self.params.memory_n, self.params.memory_m,
+                              self.cuda)
+        if self.cuda:
+            net = net.cuda()
+
         return net
 
     @dataloader.default
@@ -109,11 +115,17 @@ class PrioritySortTaskModelTraining(object):
 
     @criterion.default
     def default_criterion(self):
-        return nn.BCELoss()
+        criterion = nn.BCELoss()
+        if self.cuda:
+            criterion = criterion.cuda()
+
+        return criterion
 
     @optimizer.default
     def default_optimizer(self):
-        return optim.RMSprop(self.net.parameters(),
-                             momentum=self.params.rmsprop_momentum,
-                             alpha=self.params.rmsprop_alpha,
-                             lr=self.params.rmsprop_lr)
+        optimizer = optim.RMSprop(self.net.parameters(),
+                                  momentum=self.params.rmsprop_momentum,
+                                  alpha=self.params.rmsprop_alpha,
+                                  lr=self.params.rmsprop_lr)
+
+        return optimizer

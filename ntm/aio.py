@@ -37,7 +37,7 @@ class EncapsulatedNTM(nn.Module):
 
         # Create the NTM components
         memory = NTMMemory(N, M, is_cuda)
-        controller = LSTMController(num_inputs + M*num_heads, controller_size, controller_layers)
+        controller = LSTMController(num_inputs + M*num_heads, controller_size, controller_layers, self.is_cuda)
         heads = nn.ModuleList([])
         for i in range(num_heads):
             heads += [
@@ -45,7 +45,7 @@ class EncapsulatedNTM(nn.Module):
                 NTMWriteHead(memory, controller_size)
             ]
 
-        self.ntm = NTM(num_inputs, num_outputs, controller, memory, heads)
+        self.ntm = NTM(num_inputs, num_outputs, controller, memory, heads, self.is_cuda)
         self.memory = memory
 
     def init_sequence(self, batch_size, is_cuda=False):

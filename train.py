@@ -103,12 +103,13 @@ def train_batch(net, criterion, optimizer, X, Y, is_cuda):
     outp_seq_len, batch_size, _ = Y.size()
 
     # New sequence
-    net.init_sequence(batch_size, is_cuda)
+    net.init_sequence(batch_size, is_cuda=is_cuda)
 
     # Feed the sequence + delimiter
     for i in range(inp_seq_len):
         if is_cuda:
-            data_parallel(net, X[i])
+            #data_parallel(net, X[i])
+            net(X[i])
         else:
             net(X[i])
 
@@ -116,14 +117,17 @@ def train_batch(net, criterion, optimizer, X, Y, is_cuda):
     y_out = torch.zeros(Y.size())
     for i in range(outp_seq_len):
         if is_cuda:
-            o, _ = data_parallel(net, X[i])
+            #y_out[i], _ = data_parallel(net, X[i])
+            y_out[i], _ = net(X[i])
         else:
-            o, _ = net(X[i])
+            y_out[i], _ = net(X[i])
 
-        y_out += [o]
+    y_out = torch.cat((y_out,), dim=0).unsqueeze(1)
 
+    if is_cuda:
+        Y = Y.cuda()
+        y_out = y_out.cuda()
 
-    y_out = torch.cat(y_out, dim=0).unsqueeze(1)
     loss = criterion(y_out, Y)
     loss.backward()
     clip_grads(net)
@@ -133,7 +137,7 @@ def train_batch(net, criterion, optimizer, X, Y, is_cuda):
     y_out_binarized.apply_(lambda x: 0 if x < 0.5 else 1)
 
     # The cost is the number of error bits per sequence
-    cost = torch.sum(torch.abs(y_out_binarized - Y.data))
+    cost = torch.sum(torch.abs(y_out_binarized - Y.cpu().data))
 
     return loss.item(), cost.item() / batch_size
 
@@ -224,7 +228,7 @@ def train_model(model, args):
 
 def init_arguments():
     parser = argparse.ArgumentParser(prog='train.py')
-    parser.add_argument('--cuda', action='store_true', help='Use GPU for training')
+    parser.add_argument('--cuda', action='store_true', default=False, help='Use GPU for training')
     parser.add_argument('--seed', type=int, default=RANDOM_SEED, help="Seed value for RNGs")
     parser.add_argument('--task', action='store', choices=list(TASKS.keys()), default='copy',
                         help="Choose the task to train (default: copy)")

@@ -7,12 +7,13 @@ import numpy as np
 
 class LSTMController(nn.Module):
     """An NTM controller based on LSTM."""
-    def __init__(self, num_inputs, num_outputs, num_layers):
+    def __init__(self, num_inputs, num_outputs, num_layers, is_cuda):
         super(LSTMController, self).__init__()
 
         self.num_inputs = num_inputs
         self.num_outputs = num_outputs
         self.num_layers = num_layers
+        self.is_cuda = is_cuda
 
         self.lstm = nn.LSTM(input_size=num_inputs,
                             hidden_size=num_outputs,

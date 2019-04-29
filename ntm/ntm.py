@@ -6,7 +6,7 @@ import torch.nn.functional as F
 
 class NTM(nn.Module):
     """A Neural Turing Machine."""
-    def __init__(self, num_inputs, num_outputs, controller, memory, heads):
+    def __init__(self, num_inputs, num_outputs, controller, memory, heads, is_cuda=False):
         """Initialize the NTM.
 
         :param num_inputs: External input size.
@@ -20,6 +20,8 @@ class NTM(nn.Module):
               called in controlled by the user (order in list)
         """
         super(NTM, self).__init__()
+
+        self.is_cuda = is_cuda
 
         # Save arguments
         self.num_inputs = num_inputs
@@ -66,11 +68,25 @@ class NTM(nn.Module):
         :param x: input vector (batch_size x num_inputs)
         :param prev_state: The previous state of the NTM
         """
+
         # Unpack the previous state
         prev_reads, prev_controller_state, prev_heads_states = prev_state
 
+        if self.is_cuda:
+            x = x.cuda()
+            for i in range(len(prev_reads)):
+                prev_reads[i] = prev_reads[i].cuda()
+            #for i in range(len(prev_controller_state)):
+            #    prev_controller_state = prev_controller_state[i].cuda()
+            for i in range(len(prev_heads_states)):
+                prev_heads_states[i] = prev_heads_states[i].cuda()
+
         # Use the controller to get an embeddings
         inp = torch.cat([x] + prev_reads, dim=1)
+
+        if self.is_cuda:
+            inp = inp.cuda()
+
         controller_outp, controller_state = self.controller(inp, prev_controller_state)
 
         # Read/Write from the list of heads
@@ -79,6 +95,7 @@ class NTM(nn.Module):
         for head, prev_head_state in zip(self.heads, prev_heads_states):
             if head.is_read_head():
                 r, head_state = head(controller_outp, prev_head_state)
+
                 reads += [r]
             else:
                 head_state = head(controller_outp, prev_head_state)
