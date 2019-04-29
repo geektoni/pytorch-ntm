@@ -93,6 +93,7 @@ class RepeatCopyTaskParams(object):
 @attrs
 class RepeatCopyTaskModelTraining(object):
     params = attrib(default=Factory(RepeatCopyTaskParams))
+    cuda = attrib(default=False)
     net = attrib()
     dataloader = attrib()
     criterion = attrib()
@@ -105,6 +106,10 @@ class RepeatCopyTaskModelTraining(object):
                               self.params.controller_size, self.params.controller_layers,
                               self.params.num_heads,
                               self.params.memory_n, self.params.memory_m)
+
+        if self.cuda:
+            net = net.cuda()
+
         return net
 
     @dataloader.default
@@ -116,11 +121,17 @@ class RepeatCopyTaskModelTraining(object):
 
     @criterion.default
     def default_criterion(self):
-        return nn.BCELoss()
+        criterion = nn.BCELoss()
+        if self.cuda:
+            criterion = criterion.cuda()
+
+        return criterion
 
     @optimizer.default
     def default_optimizer(self):
-        return optim.RMSprop(self.net.parameters(),
-                             momentum=self.params.rmsprop_momentum,
-                             alpha=self.params.rmsprop_alpha,
-                             lr=self.params.rmsprop_lr)
+        optimizer = optim.RMSprop(self.net.parameters(),
+                                  momentum=self.params.rmsprop_momentum,
+                                  alpha=self.params.rmsprop_alpha,
+                                  lr=self.params.rmsprop_lr)
+
+        return optimizer

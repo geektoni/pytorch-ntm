@@ -15,7 +15,7 @@ def _convolve(w, s):
 
 class NTMMemory(nn.Module):
     """Memory bank for NTM."""
-    def __init__(self, N, M):
+    def __init__(self, N, M, is_cuda=False):
         """Initialize the NTM Memory matrix.
 
         The memory's dimensions are (batch_size x N x M).
@@ -23,11 +23,13 @@ class NTMMemory(nn.Module):
 
         :param N: Number of rows in the memory.
         :param M: Number of columns/features in the memory.
+        :param is_cuda: Use GPU.
         """
         super(NTMMemory, self).__init__()
 
         self.N = N
         self.M = M
+        self.is_cuda = is_cuda
 
         # The memory bias allows the heads to learn how to initially address
         # memory locations by content
@@ -53,6 +55,10 @@ class NTMMemory(nn.Module):
         """write to memory (according to section 3.2)."""
         self.prev_mem = self.memory
         self.memory = torch.Tensor(self.batch_size, self.N, self.M)
+
+        if self.is_cuda:
+            self.memory = self.memory.cuda()
+
         erase = torch.matmul(w.unsqueeze(-1), e.unsqueeze(1))
         add = torch.matmul(w.unsqueeze(-1), a.unsqueeze(1))
         self.memory = self.prev_mem * (1 - erase) + add
@@ -89,6 +95,8 @@ class NTMMemory(nn.Module):
 
     def _shift(self, wg, s):
         result = torch.zeros(wg.size())
+        if self.is_cuda:
+            result = result.cuda()
         for b in range(self.batch_size):
             result[b] = _convolve(wg[b], s[b])
         return result
