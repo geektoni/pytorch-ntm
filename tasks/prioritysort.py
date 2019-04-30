@@ -33,16 +33,21 @@ def dataloader(num_batches,
         inp = torch.zeros(seq_len + 1, batch_size, seq_width + 1)
 
         # Add priority number (just a single one drawn from the uniform distribution)
-        priority = np.random.random_integers(0, seq_len, (seq_len, batch_size, 1))
+        priority = np.random.uniform(-1, 1, (seq_len, batch_size, 1))
         priority = torch.from_numpy(priority)
 
         # Construct the input vectors
         inp[:seq_len, :, :seq_width] = seq
         inp[:seq_len, :, (seq_width):] = priority  # priority
 
+        # Add the delimiter
+        inp_delim = torch.zeros(seq_len + 1, batch_size, seq_width + 2)
+        inp_delim[:(seq_len+1), :, :(seq_width+1)] = inp
+        inp_delim[seq_len, :, seq_width+1] = 1.0  # delimiter in our control channel
+
         # Construct the output which will be a sorterd version of
         # the sequences given by looking at the priority
-        outp = inp.numpy()
+        outp = inp_delim.numpy()
 
         # Strip all the binary vectors into a list
         # and sort the list by looking at the last column
@@ -50,7 +55,9 @@ def dataloader(num_batches,
         temp = []
         for i in range(len(outp)):
             temp.append(outp[i][0])
-        temp.sort(key=lambda x: x[seq_width])
+        del temp[-1] # Remove the delimiter
+        temp.sort(key=lambda x: x[seq_width], reverse=True) # Sort elements descending order
+        del temp[-4:] # Keep only the highest 16 entries as specified in the paper
 
         # FIXME
         # Ugly hack to present the tensor structure as the one
@@ -64,13 +71,13 @@ def dataloader(num_batches,
         # Convert everything to numpy and to a tensor
         outp = torch.from_numpy(np.array(layer))
 
-        yield batch_num + 1, inp.float(), outp.float()
+        yield batch_num + 1, inp_delim.float(), outp.float()
 
 @attrs
 class PrioritySortTaskParams(object):
     name = attrib(default="priority-sort-task")
     cuda = attrib(default=False)
-    controller_size = attrib(default=115, converter=int)
+    controller_size = attrib(default=100, converter=int)
     controller_layers = attrib(default=2,converter=int)
     num_heads = attrib(default=5, converter=int)
     sequence_width = attrib(default=8, converter=int)
@@ -98,7 +105,7 @@ class PrioritySortTaskModelTraining(object):
 
         # We have an input/output increase of the size since we want to return also
         # the priority of that specific sequence
-        net = EncapsulatedNTM(self.params.sequence_width + 1, self.params.sequence_width+1,
+        net = EncapsulatedNTM(self.params.sequence_width + 2, self.params.sequence_width+2,
                               self.params.controller_size, self.params.controller_layers,
                               self.params.num_heads,
                               self.params.memory_n, self.params.memory_m,
