@@ -108,8 +108,8 @@ def train_batch(net, criterion, optimizer, X, Y, is_cuda):
     # Feed the sequence + delimiter
     for i in range(inp_seq_len):
         if is_cuda:
-            #data_parallel(net, X[i])
-            net(X[i])
+            data_parallel(net, X[i])
+            #net(X[i])
         else:
             net(X[i])
 
@@ -117,12 +117,10 @@ def train_batch(net, criterion, optimizer, X, Y, is_cuda):
     y_out = torch.zeros(Y.size())
     for i in range(outp_seq_len):
         if is_cuda:
-            #y_out[i], _ = data_parallel(net, X[i])
-            y_out[i], _ = net(X[i])
+            y_out[i], _ = data_parallel(net, X[i])
+            #y_out[i], _ = net(X[i])
         else:
             y_out[i], _ = net(X[i])
-
-    y_out = torch.cat((y_out,), dim=0).unsqueeze(1)
 
     if is_cuda:
         Y = Y.cuda()

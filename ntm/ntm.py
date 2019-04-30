@@ -78,8 +78,8 @@ class NTM(nn.Module):
                 prev_reads[i] = prev_reads[i].cuda()
             #for i in range(len(prev_controller_state)):
             #    prev_controller_state = prev_controller_state[i].cuda()
-            for i in range(len(prev_heads_states)):
-                prev_heads_states[i] = prev_heads_states[i].cuda()
+            #for i in range(len(prev_heads_states)):
+            #    prev_heads_states[i] = prev_heads_states[i].cuda()
 
         # Use the controller to get an embeddings
         inp = torch.cat([x] + prev_reads, dim=1)
@@ -96,14 +96,20 @@ class NTM(nn.Module):
             if head.is_read_head():
                 r, head_state = head(controller_outp, prev_head_state)
 
+                if self.is_cuda:
+                    head_state = head_state.cuda()
+                    r = r.cuda()
+
                 reads += [r]
             else:
                 head_state = head(controller_outp, prev_head_state)
+                if self.is_cuda:
+                    head_state = head_state.cuda()
             heads_states += [head_state]
 
         # Generate Output
         inp2 = torch.cat([controller_outp] + reads, dim=1)
-        o = F.sigmoid(self.fc(inp2))
+        o = torch.sigmoid(self.fc(inp2))
 
         # Pack the current state
         state = (reads, controller_state, heads_states)

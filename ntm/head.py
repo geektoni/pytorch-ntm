@@ -43,7 +43,7 @@ class NTMHeadBase(nn.Module):
         # Handle Activations
         k = k.clone()
         β = F.softplus(β)
-        g = F.sigmoid(g)
+        g = torch.sigmoid(g)
         s = F.softmax(s, dim=1)
         γ = 1 + F.softplus(γ)
 
@@ -128,7 +128,7 @@ class NTMWriteHead(NTMHeadBase):
         k, β, g, s, γ, e, a = _split_cols(o, self.write_lengths)
 
         # e should be in [0, 1]
-        e = F.sigmoid(e)
+        e = torch.sigmoid(e)
 
         # Write to memory
         w = self._address_memory(k, β, g, s, γ, w_prev)
