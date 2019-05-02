@@ -139,7 +139,7 @@ def train_batch(net, criterion, optimizer, X, Y, is_cuda):
     return loss.item(), cost.item() / batch_size
 
 
-def UNUSED_evaluate(net, criterion, X, Y):
+def evaluate(net, criterion, X, Y):
     """Evaluate a single batch (without training)."""
     inp_seq_len = X.size(0)
     outp_seq_len, batch_size, _ = Y.size()
@@ -168,7 +168,7 @@ def UNUSED_evaluate(net, criterion, X, Y):
     cost = torch.sum(torch.abs(y_out_binarized - Y.data))
 
     result = {
-        'loss': loss.data[0],
+        'loss': loss.item(),
         'cost': cost / batch_size,
         'y_out': y_out,
         'y_out_binarized': y_out_binarized,
