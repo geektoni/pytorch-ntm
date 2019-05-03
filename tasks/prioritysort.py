@@ -57,7 +57,12 @@ def dataloader(num_batches,
             temp.append(outp[i][0])
         del temp[-1] # Remove the delimiter
         temp.sort(key=lambda x: x[seq_width], reverse=True) # Sort elements descending order
-        #del temp[-4:] # Keep only the highest 16 entries as specified in the paper
+
+        # Keep only the highest entries as specified in the paper.
+        # This means that for 20 entries we want to predict only the highest 16.
+        # This will be done only if a sequence is larger than 4 elements.
+        if len(temp) > 4:
+            del temp[-4:]
 
         # FIXME
         # Ugly hack to present the tensor structure as the one
