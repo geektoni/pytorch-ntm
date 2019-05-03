@@ -57,7 +57,7 @@ def dataloader(num_batches,
             temp.append(outp[i][0])
         del temp[-1] # Remove the delimiter
         temp.sort(key=lambda x: x[seq_width], reverse=True) # Sort elements descending order
-        del temp[-4:] # Keep only the highest 16 entries as specified in the paper
+        #del temp[-4:] # Keep only the highest 16 entries as specified in the paper
 
         # FIXME
         # Ugly hack to present the tensor structure as the one
@@ -118,7 +118,7 @@ class PrioritySortTaskModelTraining(object):
     @dataloader.default
     def default_dataloader(self):
         return dataloader(self.params.num_batches, self.params.batch_size,
-                          20, self.params.sequence_width)
+                          self.params.sequence_max_len, self.params.sequence_width)
 
     @criterion.default
     def default_criterion(self):
