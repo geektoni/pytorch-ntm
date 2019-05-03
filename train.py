@@ -69,10 +69,10 @@ def progress_bar(batch_num, report_interval, last_loss):
         "=" * fill, " " * (40 - fill), batch_num, last_loss), end='')
 
 
-def save_checkpoint(net, name, args, batch_num, losses, costs, seq_lengths):
+def save_checkpoint(net, name, args, batch_num, losses, costs, seq_lengths, seq_width):
     progress_clean()
 
-    basename = "{}/{}-{}-batch-{}".format(args.checkpoint_path, name, args.seed, batch_num)
+    basename = "{}/{}-{}-{}-{}-batch-{}".format(args.checkpoint_path, name, args.seed, seq_width, seq_lengths[0], batch_num)
     model_fname = basename + ".model"
     LOGGER.info("Saving model checkpoint to: '%s'", model_fname)
     torch.save(net.state_dict(), model_fname)
@@ -218,7 +218,7 @@ def train_model(model, args):
         # Checkpoint
         if (args.checkpoint_interval != 0) and (batch_num % args.checkpoint_interval == 0):
             save_checkpoint(model.net, model.params.name, args,
-                            batch_num, losses, costs, seq_lengths)
+                            batch_num, losses, costs, seq_lengths, model.params.sequence_width)
 
     LOGGER.info("Done training.")
 
